@@ -7,6 +7,11 @@ private:
     // data members
     int user_id;
     bool is_signedin = false;
+    vector<string> server_ips; // list of server ips
+    unordered_map<string, double> download_status; // download_status of files; file_id -> int percentage
+    // own ThreadPool of threads to submit tasks to
+    ThreadPool thread_exec;
+
     // private helper functions
     void __upload_file(string file_name, string perimissions) {
         // upload a single file to a server
