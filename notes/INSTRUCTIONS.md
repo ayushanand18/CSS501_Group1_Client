@@ -2,7 +2,7 @@
 > These include instructions to setup the client or the server code using RPCLib
 
 ## Installation
-> If you need to install the RPCLib library from the source fresh. You must skip to last 3 steps if you are directly cloning this repository.
+> If you need to install the RPCLib library from the source fresh. You must skip if you are not building from source. If you are cloning this repo, simply skip over to Next Steps.
 On Linux:
 + `git clone https://github.com/rpclib/rpclib`
 + `cd rpclib/`
@@ -10,6 +10,8 @@ On Linux:
 + `make install`
 + Move the `rpc_lib/` directory from inside `rpclib` to outside of it.
 + Delete the `rpclib/` directory by `rm -rf rpclib/`
+
+## Next Steps (Installation)
 + `cd rpc_lib/`
 + `sudo cp -rf include/rpclib /usr/local/include/`
 + `sudo cp lib/librpc.a /usr/local/lib/`
