@@ -1,0 +1,21 @@
+name: Compile and Test Client
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: configure
+      run: |
+        sudo cp -rf rpc_lib/include/rpc /usr/local/include/
+        sudo cp rpc_lib/lib/librpc.a /usr/local/lib/
+    - name: make
+      run: make
