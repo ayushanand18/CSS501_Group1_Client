@@ -147,7 +147,7 @@ private:
             std::cout << "\
             +--------------+---------+---------+-------------------+---------------+---------+------------+\
             | " << file_id
-                      << "\t\t\t| " << val.name << "\t\t| " << val.author << "\t| " << val.last_update_time << "\t|" << access << "\t\t| <<" << val.size << "\t | " << downloaded << " |\
+                      << "\t| " << val.name << "\t\t| " << val.author << "\t| " << val.last_update_time << "\t|" << access << "\t\t| <<" << val.size << "\t | " << downloaded << " |\
             +--------------+---------+---------+-------------------+---------------+---------+------------+\
             " << std::endl;
         }
@@ -163,7 +163,7 @@ public:
         this->user_id = "";
         this->is_signedin = false;
     }
-    // #TODO: @ajay
+    // contributed by @ajay
     void upload()
     {
         // upload function to be called directly from frontend
@@ -185,7 +185,7 @@ public:
         // simply send string content
         __upload_file(permissions, path);
     }
-    // #TODO: @uday
+    // contributed by @uday
     void download()
     {
         // directly called by the user
