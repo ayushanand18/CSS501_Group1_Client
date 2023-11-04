@@ -1,0 +1,57 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Compile Server",
+        "type": "shell",
+        "command": "g++ /workspaces/CSS501_Group1_Client/src/server.cpp -o server.out -I/usr/local/include/rpclib -L/usr/local/lib -lrpc -lpthread",
+        "windows": {
+          "command": ".\\scripts\\test.cmd"
+        },
+        "group": "build",
+        "presentation": {
+          "reveal": "always",
+          "panel": "new"
+        }
+      },
+      {
+        "label": "Run Server",
+        "type": "shell",
+        "command": "bash /workspaces/CSS501_Group1_Client/server.out",
+        "windows": {
+          "command": ".\\scripts\\test.cmd"
+        },
+        "group": "test",
+        "presentation": {
+          "reveal": "always",
+          "panel": "new"
+        }
+      },
+      {
+        "label": "Compile Client",
+        "type": "shell",
+        "command": "g++ /workspaces/CSS501_Group1_Client/src/client.cpp -o client.out -I/usr/local/include/rpclib -L/usr/local/lib -lrpc -lpthread",
+        "windows": {
+          "command": ".\\scripts\\test.cmd"
+        },
+        "group": "build",
+        "presentation": {
+          "reveal": "always",
+          "panel": "new"
+        }
+      },
+      {
+        "label": "Run Client",
+        "type": "shell",
+        "command": "bash /workspaces/CSS501_Group1_Client/client.out",
+        "windows": {
+          "command": ".\\scripts\\test.cmd"
+        },
+        "group": "test",
+        "presentation": {
+          "reveal": "always",
+          "panel": "new"
+        }
+      }
+    ]
+  }
