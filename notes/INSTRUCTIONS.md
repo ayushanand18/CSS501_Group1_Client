@@ -41,6 +41,19 @@ cd ../CSS501_Group1_Client && mkdir downloads/
 ```shell
 cd ../CSS501_Group1_Server
 make && ./src/server.out
+```
+and on a different terminal
+```shell
 cd CSS501_Group1_Client/
 make && ./src/client.out
 ```
+
+## Errors
+> If you get some of the below errors during execution of the above steps, please do the following.
+* `Command 'make' not found, but can be installed with:`
+    + install with `sudo apt install make`
+* `src/server.cpp:14:10: fatal error: openssl/md5.h: No such file or directory`
+    + install with `sudo apt-get install libssl-dev`
+* `/usr/bin/ld: cannot find -lz: No such file or directory`
+    + `sudo apt-get install zlib1g-dev`
+* Make sure to run `sudo apt update` before running any of these fixes.
