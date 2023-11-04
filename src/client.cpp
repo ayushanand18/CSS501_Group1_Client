@@ -272,7 +272,7 @@ public:
                     break;
                 case 3:
                     std::cout << "**Thanks for using our system**" << std::endl;
-                    exit(1);
+                    exit(0);
                 default:
                     std::cout << "Please enter valid choice!" << std::endl;
                 }
