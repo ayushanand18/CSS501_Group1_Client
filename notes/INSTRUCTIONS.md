@@ -13,7 +13,7 @@ On Linux:
 
 ## Next Steps (Installation)
 + `cd rpc_lib/`
-+ `sudo cp -rf include/rpclib /usr/local/include/`
++ `sudo cp -rf include/rpc /usr/local/include/`
 + `sudo cp lib/librpc.a /usr/local/lib/`
 
 ## Running
