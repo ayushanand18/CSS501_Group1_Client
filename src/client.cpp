@@ -1,188 +1,267 @@
 #include <iostream>
 #include <unordered_map>
+#include <string>
+#include <fstream>
 #include "rpc/client.h"
 
-class File{
+class File
+{
 public:
     // data members of a File type, adjust according to your needs
-    string name, file_id, author, location_on_disc, last_update_time;
+    std::string name, file_id, author, location_on_disc, last_update_time;
     size_t size;
     unsigned int num_downloads;
 
     // constructor to the File Class
-    File(const string name, const string file_id, const string author, const string location_on_disc, const string last_update_time, const size_t size, const unsigned int num_downloads) {
-      this->author = author;
-      this->file_id = file_id;
-      this->last_update_time = last_update_time;
-      this->location_on_disc = location_on_disc;
-      this->name = name;
-      this->num_downloads = num_downloads;
-      this->size = size;
+    File(const std::string name, const std::string file_id, const std::string author, const std::string location_on_disc, const std::string last_update_time, const size_t size, const unsigned int num_downloads)
+    {
+        this->author = author;
+        this->file_id = file_id;
+        this->last_update_time = last_update_time;
+        this->location_on_disc = location_on_disc;
+        this->name = name;
+        this->num_downloads = num_downloads;
+        this->size = size;
     }
 };
 
-class Client {
+std::vector<std::string> split(std::string s, std::string delimiter)
+{
+  size_t pos_start = 0, pos_end, delim_len = delimiter.length();
+  std::string token;
+  std::vector<std::string> res;
+
+  while ((pos_end = s.find(delimiter, pos_start)) != std::string::npos)
+  {
+    token = s.substr(pos_start, pos_end - pos_start);
+    pos_start = pos_end + delim_len;
+    res.push_back(token);
+  }
+
+  res.push_back(s.substr(pos_start));
+  return res;
+}
+
+class Client
+{
 private:
     // data members
-    int user_id;
+    std::string user_id;
     bool is_signedin = false;
     // vector<string> server_ips; // list of server ips
-    unordered_map<string, double> download_status; // download_status of files; file_id -> int percentage
+    std::unordered_map<std::string, double> download_status; // download_status of files; file_id -> int percentage
     // own ThreadPool of threads to submit tasks to
     // ThreadPool thread_exec;
-    rpc::client client;
-    unordered_map<string, File> download_list;
 
-    // #TODO: @ajay
+    rpc::client *client;
+    std::unordered_map<std::string, File> download_list;
+
     // private helper functions
-    void __upload_file(string file_name, string perimissions) {
+    // contributed by @ajay
+    std::string __getFileContent(const std::string& filepath, std::size_t& fileSize) {
+        std::ifstream file(filepath, std::ios::binary);
+        std::stringstream content;
+
+        if (file.is_open()) {
+            file.seekg(0, std::ios::end); // Move to the end of the file
+            fileSize = static_cast<std::size_t>(file.tellg()); // Get the file size
+            file.seekg(0, std::ios::beg); // Move back to the beginning
+
+            content << file.rdbuf();
+            file.close();
+        } else {
+            throw std::runtime_error("Unable to open file: " + filepath);
+        }
+
+        return content.str();
+    }
+    // contributed by @ajay
+    void __upload_file(std::string permissions, std::string path) {
         // upload a single file to a server
-        
+        size_t size_of_file;
         // 1. supply name, author, size, content and permissions to the API Call
-        content = read(file_name);
-        
+        std::string content = __getFileContent(path,size_of_file);
+        std::cout << "Enter Name of the author" << std::endl;
+        auto splitted_path = split(path, "/");
         // make an API call
-        client.call("upload", name, author, permissions, size, content);
+        client->call("upload", splitted_path.back(), user_id, permissions, size_of_file, content);
     }
     // #TODO: @uday
-    void __download_file(string file_id) {
+    void __download_file(std::string file_id) {
         // just download the file and return the data
         
         // steps
         // 1. check permissions if given or not
         // 2. make an api call
-        string file_content = client.call("download", file_id).as<string>();
+        std::string file_content = client->call("download", file_id).as<std::string>();
         // 3. write to disc in same folder /downloads/file_id
-        ofstream new_file(loc_on_disc/file_id.txt);
+        std::ofstream new_file("/downloads" + file_id + "-" + download_list[file_id].name);
         new_file << file_content;
-        // 4. show to user the progress (fake progress) with a progress bar
-        // 5. update to download_list
+        new_file.close();
+        // 4. Show fake progress (optional)
+        std::cout << "Download in progress..." << std::endl;
     }
-    // #TODO: @rudra
+    // function to show files to the user with the list of files on the server
+    // contributed by @rudra
     void __view_files() {
-        // iterate over the download_list map, and print out files in a tabular fashion
-        // +-------------+---------+
-        // | string name, file_id, author, location_on_disc, last_update_time|
+        download_list = client->call("get_files_list").as<std::unordered_map<std::string, File>>();
+        std::cout << "\
+        +--------------+---------+---------+-------------------+---------------+---------+------------+\
+        | file_id\t\t\t| name\t\t| author\t| last_update_time\t|permissions\t\t| size \t | downloaded |\
+        +--------------+---------+---------+-------------------+---------------+---------+------------+\
+        " << std::endl;
+        std::cout << "name\tfile_id\tauthor\tlocation_on_disc\tlast_update_time" << std::endl;
+        // for(auto& [key, val]: download_list) {
+        //     vector<string> accesses = split(val.permissions, "|");
+        //     if(val.permissions == "*" or find(accesses.begin(), accesses.end(), user_id))
+        //     {
+        //      cout<<it.second.file_id\t<<it.second.author\t<<it.second.location_on_disk\t<<it.second.last_updated_time<endl;
+        //     }
+        // }
+    }
 
-    }
 public:
-    // #TODO: @ayushanand18
-    Client(rpc::client client){
-        // initialise all data
-        this->client=client;
+    Client() {
+        rpc::client client("127.0.0.1", 8080);
+        this->client = &client;
     }
-    // #TODO: @ayushanand18
-    ~Client(){
-        // destructor, delete all user data
-        // signout the user also,and break the socket connection (if any)
+    ~Client()
+    {
+        this->user_id = "";
+        this->is_signedin = false;
     }
     // #TODO: @ajay
     void upload() {
         // upload function to be called directly from frontend
         // these functions are directly called form UI so no arguments
-        cout << "User Options" << endl; // add appropriate data input like, file path and permissions
+        std::string path, permissions = "";
+        bool access;
+        // add appropriate data input like, file path and permissions
+        std::cout << "User Options" << std::endl; 
+        std::cout << "give the path of the file to be uploaded" << std::endl;
+        std::cin >> path;
+        std::cout << "Do you want to grant access of this file to other users(0/1)" << std::endl;
         
-        cin >> permissions >> path;
-        
+        std::cin >> access;
+        if(access){
+            std::cout << "enter space seperated user names" << std::endl;
+            std::cin >> permissions;
+        }
         // simply send string content
-        __upload_file(file_name, permissions);
+        __upload_file(permissions, path);
     }
     // #TODO: @uday
     void download() {
         // directly called by the user
         // get the file_id from the user by using suitable prompts and options
         
-        // Steps
-        // 1. show all files to users
-        // 2. input file_id from user
-        // 3. call the helper __download_file()
-
-        cout<<"Input your fileId"<<endl;
-
-        cin >> file_id;
-
-        // get access for the particular file, check with server 
-        // for an exposed endpoint to do this
+        std::cout << ">>> Showing all files: " << std::endl;
+        __view_files();
+        
+        std::cout << "Input your fileId" << std::endl;
+        std::string inputed_fileId;
+        std::cin >> inputed_fileId;
      
-        access = check_access(file_id, this->user_id)
-        // if no access just return
-        
-        if (!access) throw Exception("No Access Permissions. try contacting the owner.")
+        bool access = client->call("check_access", user_id, inputed_fileId).as<bool>();
 
-        file_data = this->__download_file(file_id)
-        
-        // IO write the content to disc
-        write(file_data.name, file_data.content)
+        if (!access) {
+            std::cout << "No Access Permissions. try contacting the owner." << std::endl;
+        }
+        else {
+            __download_file(inputed_fileId);
+        }
     }
-    void login() {
+
+    void login()
+    {
         // login the user, and set user_id, and is_signedin=true
-        string user, password;
-        cout<<"Enter your UserID: ";
-        cin>>user;
-        cout<<"Enter your Password: ";
-        cin>>password;
-        bool result = client.call("signin", user, password).as<bool>();
-        if(result){
-            cout<<"Successful sign-in."<<endl;
-        }
-        else{
-            cout<<"Incorrect userId and Password."<<endl;
-        }
-        is_signedin= result;
+        std::string username, password;
+        std::cout << "Enter your UserID: ";
+        std::cin >> username;
+        std::cout << "Enter your Password: ";
+        std::cin >> password;
+        bool result = client->call("signin", username, password).as<bool>();
+        if (result) std::cout << "Successful sign-in." << std::endl;
+        else std::cout << "Incorrect userId and Password." << std::endl;
+        
+        if(result) user_id = username;
+        is_signedin = result;
     }
-    void register(){
+    void signup()
+    {
         // register a new user,and set user_id and is_signedin=true
-        string user, password, name;
-        cout<<"Enter your name: ";
-        cin>>name;
-        cout<<"Enter your UserID: ";
-        cin>>user;
-        cout<<"Enter your Password: ";
-        cin>>password;
+        std::string username, password, name;
+        std::cout << "Enter your name: ";
+        std::cin >> name;
+        std::cout << "Enter your UserID: ";
+        std::cin >> username;
+        std::cout << "Enter your Password: ";
+        std::cin >> password;
 
-        bool result = client.call("register",name,user, password).as<bool>();
-        if(result){
-            cout<<"Successful registration."<<endl;
-        }
-        else{
-            cout<<"Unknown failure occured."<<endl;
-        }
+        bool result = client->call("register", name, username, password).as<bool>();
+        if (result) std::cout << "Successful registration." << std::endl;
+        else std::cout << "Unknown failure occured." << std::endl;
+        if(result) user_id = username;
         is_signedin = result;
     }
     // #TODO: @bikash
-    void init() {
+    void init()
+    {
         // showup the menu, as soon as the object is constructed, this
-        // function will be called and entered into a while loop until 
+        // function will be called and entered into a while loop until
         // the program is being run
         int choice;
-        while(true){
-            if(!is_signedin){
-                cout<<"File sharing System CLI"<<endl<<"1. Login\n 2. Register\n 3. Exit\n Please enter your choice : ";
-                cin>>choice;
-                switch(choice){
-                    case 1: login();
+        while (true)
+        {
+            if (!is_signedin)
+            {
+                std::cout << "File sharing System CLI" << std::endl
+                     << "1. Login\n2. Register\n3. Exit\nPlease enter your choice : ";
+                std::cin >> choice;
+                switch (choice)
+                {
+                case 1:
+                    login();
                     break;
-                    case 2: register();
+                case 2:
+                    signup();
                     break;
-                    case 3: cout<<"**Thanks for using our system**"<<endl;
+                case 3:
+                    std::cout << "**Thanks for using our system**" << std::endl;
                     break;
-                    default: cout<<"Please enter valid choice!"<<endl;
+                default:
+                    std::cout << "Please enter valid choice!" << std::endl;
                 }
             }
-            else{
-                cout<<"1. Upload a file \n2. Download a file"<<endl
-                    <<"3. View files"<<endl
-                    <<"4. Logout"<<endl;
-                // switch for these options
+            else
+            {
+                std::cout << "1. Upload a file \n2. Download a file" << std::endl
+                     << "3. View files" << std::endl
+                     << "4. Logout" << std::endl;
+                switch (choice)
+                {
+                case 1:
+                    upload();
+                    break;
+                case 2:
+                    download();
+                    break;
+                case 3:
+                    __view_files();
+                    break;
+                case 4:
+                    is_signedin = false;
+                    break;
+                default:
+                    std::cout << "Please enter valid choice!" << std::endl;
+                }
             }
         }
     }
-}
+};
 
-int main() {
-    // Creating a client that connects to the localhost on port 8080
-    rpc::client client("127.0.0.1", 8080);
-
-    Client instance(client);
+int main()
+{
+    Client instance;
     instance.init();
 }
