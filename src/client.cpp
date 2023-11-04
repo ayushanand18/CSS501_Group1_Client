@@ -1,83 +1,102 @@
 #include <iostream>
+#include <unordered_map>
 #include "rpc/client.h"
+
+class File{
+public:
+    // data members of a File type, adjust according to your needs
+    string name, file_id, author, location_on_disc, last_update_time;
+    size_t size;
+    unsigned int num_downloads;
+
+    // constructor to the File Class
+    File(const string name, const string file_id, const string author, const string location_on_disc, const string last_update_time, const size_t size, const unsigned int num_downloads) {
+      this->author = author;
+      this->file_id = file_id;
+      this->last_update_time = last_update_time;
+      this->location_on_disc = location_on_disc;
+      this->name = name;
+      this->num_downloads = num_downloads;
+      this->size = size;
+    }
+};
 
 class Client {
 private:
     // data members
     int user_id;
     bool is_signedin = false;
-    vector<string> server_ips; // list of server ips
+    // vector<string> server_ips; // list of server ips
     unordered_map<string, double> download_status; // download_status of files; file_id -> int percentage
     // own ThreadPool of threads to submit tasks to
-    ThreadPool thread_exec;
+    // ThreadPool thread_exec;
     rpc::client client;
+    unordered_map<string, File> download_list;
 
-
+    // #TODO: @ajay
     // private helper functions
     void __upload_file(string file_name, string perimissions) {
         // upload a single file to a server
-        random_index = random(0, this->server_ips.size())
-        server = this->server_ips[random_index]
         
-        // logic of socket connection to follow
-        socket_connection = setup_socket(server)
-        file_bytes = read(file_name)
-
-        file_hash = hash(file_bytes)
-
-        // check with server if hash is present or not
-        is_present = socket_connection.send('/check_if_present', file_hash)
-
-        if (is_present == true)
-            return
+        // 1. supply name, author, size, content and permissions to the API Call
+        content = read(file_name);
         
-        file_metadata  = {
-            'name': file_name,
-            'size': get_size(file_name)
-            'author': this->user_id
-            'content': file_bytes,
-            'permissions': permissions
-        }
-
-        socket_connection.send('upload', file_metadata)
+        // make an API call
+        client.call("upload", name, author, permissions, size, content);
     }
-    void __download(string file_id) {
+    // #TODO: @uday
+    void __download_file(string file_id) {
         // just download the file and return the data
+        
+        // steps
+        // 1. check permissions if given or not
+        // 2. make an api call
+        string file_content = client.call("download", file_id).as<string>();
+        // 3. write to disc in same folder /downloads/file_id
+        ofstream new_file(loc_on_disc/file_id.txt);
+        new_file << file_content;
+        // 4. show to user the progress (fake progress) with a progress bar
+        // 5. update to download_list
+    }
+    // #TODO: @rudra
+    void __view_files() {
+        // iterate over the download_list map, and print out files in a tabular fashion
+        // +-------------+---------+
+        // | string name, file_id, author, location_on_disc, last_update_time|
+
     }
 public:
+    // #TODO: @ayushanand18
     Client(rpc::client client){
         // initialise all data
         this->client=client;
-
     }
+    // #TODO: @ayushanand18
     ~Client(){
         // destructor, delete all user data
         // signout the user also,and break the socket connection (if any)
     }
+    // #TODO: @ajay
     void upload() {
         // upload function to be called directly from frontend
         // these functions are directly called form UI so no arguments
         cout << "User Options" << endl; // add appropriate data input like, file path and permissions
         
-        cin >>permissions >> path;
+        cin >> permissions >> path;
         
-        if path is a folder:
-            // maintain a list of promises
-            promises = {}
-            for file in folder:
-                // submit each file to the thread pool
-                promise = ThreadPool.submit(this->__upload_file, args={file, permissions})
-                promises.push(promise)
-
-            for promise in promises:
-                // to resolve each promise
-                promise.result()
-        else:
-            ThreadPool.submit(this->__upload_file, args={path, permissions}).result()
+        // simply send string content
+        __upload_file(file_name, permissions);
     }
+    // #TODO: @uday
     void download() {
         // directly called by the user
         // get the file_id from the user by using suitable prompts and options
+        
+        // Steps
+        // 1. show all files to users
+        // 2. input file_id from user
+        // 3. call the helper __download_file()
+
         cout<<"Input your fileId"<<endl;
 
         cin >> file_id;
@@ -97,51 +116,47 @@ public:
     }
     void login() {
         // login the user, and set user_id, and is_signedin=true
-        string user;
-        string password;
-        cout<<"Enter your UserId"<<endl;
+        string user, password;
+        cout<<"Enter your UserID: ";
         cin>>user;
-        cout<<"Enter your Password"<<endl;
+        cout<<"Enter your Password: ";
         cin>>password;
-        bool result = client.call("signin",user, password);
+        bool result = client.call("signin", user, password).as<bool>();
         if(result){
-            cout<<"Successful signIn"<<endl;
-
+            cout<<"Successful sign-in."<<endl;
         }
         else{
-            cout<<"Incorret userId and Password"<<endl;
-
+            cout<<"Incorrect userId and Password."<<endl;
         }
-      is_signedin= result;
+        is_signedin= result;
     }
     void register(){
         // register a new user,and set user_id and is_signedin=true
-        string user;
-        string password;
-        string name;
-        cout<<"Enter your name"<<endl;
+        string user, password, name;
+        cout<<"Enter your name: ";
         cin>>name;
-        cout<<"Enter your UserId"<<endl;
+        cout<<"Enter your UserID: ";
         cin>>user;
-        cout<<"Enter your Password"<<endl;
+        cout<<"Enter your Password: ";
         cin>>password;
 
-        bool result = client.call("register",name,user, password);
+        bool result = client.call("register",name,user, password).as<bool>();
         if(result){
-            cout<<"Successful registration"<<endl;
+            cout<<"Successful registration."<<endl;
         }
         else{
-            cout<<"Unknown failure occured"<<endl;
+            cout<<"Unknown failure occured."<<endl;
         }
-      is_signedin= result;
+        is_signedin = result;
     }
+    // #TODO: @bikash
     void init() {
         // showup the menu, as soon as the object is constructed, this
         // function will be called and entered into a while loop until 
         // the program is being run
-       int choice;
+        int choice;
         while(true){
-            if(is_signedin){
+            if(!is_signedin){
                 cout<<"File sharing System CLI"<<endl<<"1. Login\n 2. Register\n 3. Exit\n Please enter your choice : ";
                 cin>>choice;
                 switch(choice){
@@ -155,7 +170,10 @@ public:
                 }
             }
             else{
-                cout<<"1. Upload a file \n2. Download a file \n3. Logout"<<endl;
+                cout<<"1. Upload a file \n2. Download a file"<<endl
+                    <<"3. View files"<<endl
+                    <<"4. Logout"<<endl;
+                // switch for these options
             }
         }
     }
