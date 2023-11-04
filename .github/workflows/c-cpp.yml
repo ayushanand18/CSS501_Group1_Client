@@ -17,5 +17,5 @@ jobs:
       run: |
         sudo cp -rf rpc_lib/include/rpc /usr/local/include/
         sudo cp rpc_lib/lib/librpc.a /usr/local/lib/
-    - name: make
-      run: make
+    - name: make build
+      run: make build
