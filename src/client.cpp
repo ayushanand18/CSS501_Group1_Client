@@ -116,7 +116,7 @@ private:
         // make an API call
         client->call("upload", splitted_path.back(), user_id, permissions, size_of_file, content);
     }
-    // #TODO: @uday
+    // contributed by @uday
     void __download_file(std::string file_id)
     {
         // just download the file and return the data
@@ -174,6 +174,7 @@ public:
     Client(rpc::client& client)
     {
         this->client = &client;
+        this->client->call("ping").as<bool>();
     }
     ~Client()
     {
@@ -265,7 +266,6 @@ public:
             user_id = username;
         is_signedin = result;
     }
-    // #TODO: @bikash
     void init()
     {
         // showup the menu, as soon as the object is constructed, this
