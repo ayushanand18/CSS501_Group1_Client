@@ -3,7 +3,7 @@
 #include <string>
 #include <fstream>
 #include <msgpack.hpp>
-#include<iomanip>
+#include <iomanip>
 #include "rpc/client.h"
 
 class File
@@ -73,14 +73,14 @@ private:
     std::unordered_set<std::string> downloaded_files;
 
     // private helper functions
-    void __draw_init_pattern(){
-        std::cout <<
-  "_____  _  _         ____   _                   _                 ____               _                   " << std::endl <<
- "|  ___|(_)| |  ___  / ___| | |__    __ _  _ __ (_) _ __    __ _  / ___|  _   _  ___ | |_  ___  _ __ ___  " << std::endl << 
- "| |_   | || | / _ \\ \\___ \\ | '_ \\  / _` || '__|| || '_ \\  / _` | \\___ \\ | | | |/ __|| __|/ _ \\| '_ ` _ \\ " << std::endl << 
- "|  _|  | || ||  __/  ___) || | | || (_| || |   | || | | || (_| |  ___) || |_| |\\__ \\| |_|  __/| | | | | |" << std::endl << 
- "|_|    |_||_| \\___| |____/ |_| |_| \\__,_||_|   |_||_| |_| \\__, | |____/  \\__, ||___/ \\__|\\___||_| |_| |_|" << std::endl << 
- "                                                          |___/          |___/                           " << std::endl;
+    void __draw_init_pattern()
+    {
+        std::cout << "_____  _  _         ____   _                   _                 ____               _                   " << std::endl
+                  << "|  ___|(_)| |  ___  / ___| | |__    __ _  _ __ (_) _ __    __ _  / ___|  _   _  ___ | |_  ___  _ __ ___  " << std::endl
+                  << "| |_   | || | / _ \\ \\___ \\ | '_ \\  / _` || '__|| || '_ \\  / _` | \\___ \\ | | | |/ __|| __|/ _ \\| '_ ` _ \\ " << std::endl
+                  << "|  _|  | || ||  __/  ___) || | | || (_| || |   | || | | || (_| |  ___) || |_| |\\__ \\| |_|  __/| | | | | |" << std::endl
+                  << "|_|    |_||_| \\___| |____/ |_| |_| \\__,_||_|   |_||_| |_| \\__, | |____/  \\__, ||___/ \\__|\\___||_| |_| |_|" << std::endl
+                  << "                                                          |___/          |___/                           " << std::endl;
     }
     // contributed by @ajay
     std::string __getFileContent(const std::string &filepath, std::size_t &fileSize)
@@ -109,9 +109,9 @@ private:
     {
         // upload a single file to a server
         size_t size_of_file;
-        // 1. supply name, author, size, content and permissions to the API Call
+        // supply name, author, size, content and permissions to the API Call
         std::string content = __getFileContent(path, size_of_file);
-        
+
         auto splitted_path = split(path, "/");
         // make an API call
         client->call("upload", splitted_path.back(), user_id, permissions, size_of_file, content);
@@ -121,57 +121,55 @@ private:
     {
         // just download the file and return the data
 
-        // steps
-        // 1. check permissions if given or not
-        // 2. make an api call
+        // check permissions if given or not
+        // make an api call
         std::string file_content = client->call("download", file_id).as<std::string>();
-        // 3. write to disc in same folder /downloads/file_id
+        // write to disc in same folder /downloads/file_id
         std::cout << "Download in progress..." << std::endl;
         std::ofstream new_file("downloads/" + file_id + "-" + download_list[file_id].name);
         new_file << file_content;
         new_file.close();
-        
+
         std::cout << "Download complete" << std::endl;
         downloaded_files.insert(file_id);
-
     }
     // function to show files to the user with the list of files on the server
     // contributed by @rudra
     void __view_files()
     {
-        std::cout <<">>> Showing all files. " << std::endl;
+        std::cout << ">>> Showing all files. " << std::endl;
         download_list = client->call("get_files_list").as<std::unordered_map<std::string, File>>();
-        std::cout << "+---------------------+--------------+-----------+-----------------------+--------+----+------------+" << std::endl <<
-        "| " << std::left  << std::setw(20) << "file_id" << std::setw(1) << "| " 
-                << std::setw(13) << "name" << std::setw(1) << "|"
-                << std::setw(10) << "author" << std::setw(1) << "|" 
-                << std::setw(24) << "last_update_time" << std::setw(1) << "|" 
-                << std::setw(8) << "access?" << std::setw(1) << "|" 
-                << std::setw(4) << "size" << std::setw(1) << "|"
-                << std::setw(12) << "downloaded?" << std::setw(1) << "|" << std::endl;
-        
+        std::cout << "+---------------------+--------------+-----------+-----------------------+--------+----+------------+" << std::endl
+                  << "| " << std::left << std::setw(20) << "file_id" << std::setw(1) << "| "
+                  << std::setw(13) << "name" << std::setw(1) << "|"
+                  << std::setw(10) << "author" << std::setw(1) << "|"
+                  << std::setw(24) << "last_update_time" << std::setw(1) << "|"
+                  << std::setw(8) << "access?" << std::setw(1) << "|"
+                  << std::setw(4) << "size" << std::setw(1) << "|"
+                  << std::setw(12) << "downloaded?" << std::setw(1) << "|" << std::endl;
+
         for (auto &it : download_list)
         {
             std::string file_id = it.first;
             File val = it.second;
-            std::vector<std::string> accesses = split(val.access_to, "|");
+            std::vector<std::string> accesses = split(val.access_to, " ");
             bool access = (val.access_to == "*" or find(accesses.begin(), accesses.end(), user_id) != accesses.end());
             bool downloaded = downloaded_files.find(file_id) != downloaded_files.end();
 
-            std::cout << "+---------------------+--------------+-----------+-----------------------+--------+----+------------+" << std::endl <<
-            "| " << std::left  << std::setw(20) << file_id << std::setw(1) << "| " 
-                << std::setw(10) << val.name << std::setw(1) << "|"
-                << std::setw(10) << val.author << std::setw(1) << "|" 
-                << std::setw(24) << val.last_update_time.substr(0, 24) << std::setw(1) << "|" 
-                << std::setw(8) << access << std::setw(1) << "|" 
-                << std::setw(4) << val.size << std::setw(1) << "|"
-                << std::setw(12) << downloaded << std::setw(1) << "|" << std::endl
-            << "+---------------------+--------------+-----------+-----------------------+--------+----+------------+" << std::endl;
+            std::cout << "+---------------------+--------------+-----------+-----------------------+--------+----+------------+" << std::endl
+                      << "| " << std::left << std::setw(20) << file_id << std::setw(1) << "| "
+                      << std::setw(10) << val.name << std::setw(1) << "|"
+                      << std::setw(10) << val.author << std::setw(1) << "|"
+                      << std::setw(24) << val.last_update_time.substr(0, 24) << std::setw(1) << "|"
+                      << std::setw(8) << access << std::setw(1) << "|"
+                      << std::setw(4) << val.size << std::setw(1) << "|"
+                      << std::setw(12) << downloaded << std::setw(1) << "|" << std::endl
+                      << "+---------------------+--------------+-----------+-----------------------+--------+----+------------+" << std::endl;
         }
     }
 
 public:
-    Client(rpc::client& client)
+    Client(rpc::client &client)
     {
         this->client = &client;
         this->client->call("ping").as<bool>();
@@ -190,9 +188,9 @@ public:
         bool access;
         // add appropriate data input like, file path and permissions
         std::cout << "**Uploading**\nUser Options::" << std::endl;
-        std::cout << "\tPath to the file: \t" ;
+        std::cout << "\tPath to the file: \t";
         std::cin >> path;
-        std::cout << "\tDo you want to grant access of this file to other users (0/1): " ;
+        std::cout << "\tDo you want to grant access of this file to other users (0/1): ";
 
         std::cin >> access;
         if (access)
@@ -203,7 +201,7 @@ public:
         // simply send string content
         __upload_file(permissions, path);
 
-        std::cout << "\tFile Uploaded! "<< std::endl;
+        std::cout << "\tFile Uploaded! " << std::endl;
     }
     // contributed by @uday
     void download()
@@ -212,7 +210,7 @@ public:
         // get the file_id from the user by using suitable prompts and options
         __view_files();
 
-        std::cout << "\tInput your file_id: \t" ;
+        std::cout << "\tInput your file_id: \t";
         std::string inputed_fileId;
         std::cin >> inputed_fileId;
 
@@ -238,9 +236,12 @@ public:
         std::cin >> password;
         bool result = client->call("signin", username, password).as<bool>();
         if (result)
-            std::cout << "\n\tSuccessful sign-in.\n" << std::endl << "Welcome, " << username << "!\n\n";
+            std::cout << "\n\tSuccessful sign-in.\n"
+                      << std::endl
+                      << "Welcome, " << username << "!\n\n";
         else
-            std::cout << "\t\tIncorrect userId and Password.\n" << std::endl;
+            std::cout << "\t\tIncorrect userId and Password.\n"
+                      << std::endl;
 
         if (result)
             user_id = username;
@@ -248,7 +249,7 @@ public:
     }
     void signup()
     {
-        // register a new user,and set user_id and is_signedin=true
+        // register a new user; and set user_id and is_signedin=true
         std::string username, password, name;
         std::cout << "Enter your name: ";
         std::cin >> name;
@@ -266,6 +267,7 @@ public:
             user_id = username;
         is_signedin = result;
     }
+    // function to show up the program menu
     void init()
     {
         // showup the menu, as soon as the object is constructed, this
@@ -277,7 +279,8 @@ public:
             if (!is_signedin)
             {
                 __draw_init_pattern();
-                std::cout << "Options:: " << std::endl << std::endl
+                std::cout << "Options:: " << std::endl
+                          << std::endl
                           << "1. Login\n2. Register\n3. Exit\n\nPlease enter your choice : ";
                 std::cin >> choice;
                 std::cout << std::endl;
@@ -300,10 +303,11 @@ public:
             {
                 std::cout << "Options::\n1. Upload a file \n2. Download a file" << std::endl
                           << "3. View files" << std::endl
-                          << "4. Logout" << std::endl << std::endl;
+                          << "4. Logout" << std::endl
+                          << std::endl;
                 std::cout << "Please enter your choice : ";
                 std::cin >> choice;
-                std::cout << std::endl; 
+                std::cout << std::endl;
                 switch (choice)
                 {
                 case 1:
