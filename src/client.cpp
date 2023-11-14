@@ -173,6 +173,7 @@ public:
     {
         this->client = &client;
         this->client->call("ping").as<bool>();
+        this->client->set_timeout(300);
     }
     ~Client()
     {
