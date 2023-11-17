@@ -1,4 +1,4 @@
-# CSS501_Group1_Client
+# File Sharing System - Frontend
 Client Code for Group1 mini-project submission as a part of CSS501 Lab
 
 ## Pre-Requisites
