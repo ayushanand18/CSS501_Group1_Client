@@ -1,6 +1,7 @@
 # File Sharing System - Frontend
 
 [![Compile and Test Client](https://github.com/ayushanand18/CSS501_Group1_Client/actions/workflows/c-cpp.yml/badge.svg)](https://github.com/ayushanand18/CSS501_Group1_Client/actions/workflows/c-cpp.yml)
+
 Client Code for Group1 mini-project submission as a part of CSS501 Lab
 
 ## Pre-Requisites
