@@ -1,17 +1,19 @@
 # Instructions
-> These include instructions to setup the client or the server code using RPCLib
+> These include instructions to setup the Client System using RPCLib
 
 ## Installation
+### Pre-requisite
 > If you need to install the RPCLib library from the source fresh. You must skip if you are not building from source. If you are cloning this repo, simply skip over to Next Steps.
 On Linux:
-+ `git clone https://github.com/rpclib/rpclib`
++ `git clone https://github.com/qchateau/rpclib`
 + `cd rpclib/`
 + `cmake -DCMAKE_INSTALL_PREFIX=rpc_lib`
 + `make install`
 + Move the `rpc_lib/` directory from inside `rpclib` to outside of it.
 + Delete the `rpclib/` directory by `rm -rf rpclib/`
 
-## Next Steps (Installation)
+### Next Steps
+> Jump directly to here if you have cloned this repo.
 + `cd rpc_lib/`
 + `sudo cp -rf include/rpc /usr/local/include/`
 + `sudo cp lib/librpc.a /usr/local/lib/`
@@ -24,6 +26,7 @@ Now the library is fully installed on your machine. You will need to link it wit
 
 # Run full package
 > To run the full suite you must have the server code also on your local machine alongside the client machine.
+
 ## First-time run
 > Execute these if you are running for the first time
 ```shell
@@ -33,19 +36,21 @@ cd CSS501_Group1_Client/rpc_lib/
 sudo cp -rf include/rpc /usr/local/include/
 sudo cp lib/librpc.a /usr/local/lib/
 cd ../../CSS501_Group1_Server && mkdir uploaded_files/
+make clean build
 cd ../CSS501_Group1_Client && mkdir downloads/
+make clean build
 ```
 
 ## Next Steps(/Second-time run)
 > Follow-on (or directly execute this if you are running not for the first time).
 ```shell
 cd ../CSS501_Group1_Server
-make && ./src/server.out
+make run
 ```
 and on a different terminal
 ```shell
 cd CSS501_Group1_Client/
-make && ./src/client.out
+make run
 ```
 
 ## Errors
