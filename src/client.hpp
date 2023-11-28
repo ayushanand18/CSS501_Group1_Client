@@ -253,9 +253,11 @@ void FSS_Client::Client::upload()
     // 3. now copy the file
     system(("cp "+path + " " + new_path).c_str());
     
-    std::cout << ">> Splitting files into chunks..." << std::endl;    
+    std::cout << ">> Splitting files into chunks..." << std::endl;
+
     // 4. split the file into chunks of 1 MB each
-    system(("split "+new_path+"/"+file_name+"-b 1m " +file_name+"-").c_str());
+    std::cout << (("split -b 100 --numeric-suffixes "+new_path+"/"+file_name +" " + file_name+"-").c_str()) << std::endl;
+    system(("cd " +new_path + " && split -b 100 --numeric-suffixes "+file_name +" " + file_name+"-").c_str());
 
     // 5. remove the parent file
     system(("rm "+new_path+"/"+file_name).c_str());
@@ -268,14 +270,20 @@ void FSS_Client::Client::upload()
     d = opendir(new_path.c_str());
     if (d) {
         while ((dir = readdir(d)) != NULL) {
-            std::cout << ">> Uploading chunk: " << dir->d_name << " ..." << std::endl;
+            std::cout << ">> Uploading chunk: " << dir->d_name;
             __upload_file(permissions, new_path+"/"+dir->d_name);
-            std::cout << ">>> Uploaded " << std::endl;
+            std::cout << "\t Uploaded " << std::endl;
         }
         closedir(d);
     }
+    
+    // when the upload is complete, remove all the chunks and also the directory
+    auto isUploadComplete = this->client->call("finishUpload", file_name).as<bool>();
+    if(isUploadComplete) {
+        system(("rm -rf "+new_path).c_str());
+    }
 
-    std::cout << "\tFile Uploaded! " << std::endl;
+    std::cout << "\t  Uploaded Complete! " << std::endl;
 }
 
 void FSS_Client::Client::download()
