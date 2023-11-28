@@ -4,6 +4,9 @@
 #include <fstream>
 #include <msgpack.hpp>
 #include <iomanip>
+#include <sys/wait.h>
+#include <cstdlib>
+#include <dirent.h>
 #include "rpc/client.h"
 
 namespace FSS_Client {
@@ -233,8 +236,44 @@ void FSS_Client::Client::upload()
         std::cout << "\t>>> Enter space seperated user names: ";
         std::cin >> permissions;
     }
-    // simply send string content
-    __upload_file(permissions, path);
+
+    // split the file into many chunks
+    // 1. locate files to a new directory of chunks
+    std::cout << ">> Copying files to temporary disk..." << std::endl;
+
+    std::string folder_path = "pending_uploads";
+    
+    // 2. create a new folder based on the file_name
+    std::vector<std::string> splitted_path = FSS_Client::split(path, "/");
+    std::string file_name = splitted_path.back();
+    std::string new_path = folder_path + "/" + file_name;
+
+    system(("mkdir " + new_path).c_str());
+
+    // 3. now copy the file
+    system(("cp "+path + " " + new_path).c_str());
+    
+    std::cout << ">> Splitting files into chunks..." << std::endl;    
+    // 4. split the file into chunks of 1 MB each
+    system(("split "+new_path+"/"+file_name+"-b 1m " +file_name+"-").c_str());
+
+    // 5. remove the parent file
+    system(("rm "+new_path+"/"+file_name).c_str());
+
+    // 6. get the list of files inside the directory
+    std::cout << ">> Getting Ready for uploading all chunks..." << std::endl;
+
+    DIR *d;
+    struct dirent *dir;
+    d = opendir(new_path.c_str());
+    if (d) {
+        while ((dir = readdir(d)) != NULL) {
+            std::cout << ">> Uploading chunk: " << dir->d_name << " ..." << std::endl;
+            __upload_file(permissions, new_path+"/"+dir->d_name);
+            std::cout << ">>> Uploaded " << std::endl;
+        }
+        closedir(d);
+    }
 
     std::cout << "\tFile Uploaded! " << std::endl;
 }
