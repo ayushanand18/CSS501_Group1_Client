@@ -66,8 +66,6 @@ namespace FSS_Client {
         bool is_signedin = false;
         // vector<string> server_ips; // list of server ips
         std::unordered_map<std::string, double> download_status; // download_status of files; file_id -> int percentage
-        // own ThreadPool of threads to submit tasks to
-        // ThreadPool thread_exec;
 
         rpc::client *client;
         std::unordered_map<std::string, File> download_list;
@@ -267,17 +265,17 @@ void FSS_Client::Client::login()
 {
     // login the user, and set user_id, and is_signedin=true
     std::string username, password;
-    std::cout << "\tEnter your UserID: \t";
+    std::cout << ">> Enter your UserID: ";
     std::cin >> username;
-    std::cout << "\tEnter your Password: \t";
+    std::cout << ">> Enter your Password: ";
     std::cin >> password;
     bool result = client->call("signin", username, password).as<bool>();
     if (result)
-        std::cout << "\n\tSuccessful sign-in.\n"
+        std::cout << "\n   Successful sign-in.\n"
                 << std::endl
                 << "Welcome, " << username << "!\n\n";
     else
-        std::cout << "\t\tIncorrect userId and Password.\n"
+        std::cout << "!  Incorrect UserID or Password.\n"
                 << std::endl;
 
     if (result)
