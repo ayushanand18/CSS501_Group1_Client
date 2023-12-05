@@ -143,16 +143,18 @@ std::string FSS_Client::Client::__getFileContent(const std::string &filepath, st
     return content.str();
 }
 
-void FSS_Client::Client::__upload_file(std::string permissions, std::string path)
+void FSS_Client::Client::__upload_file(std::string file_id, std::string path)
 {
     // upload a single file to a server
     size_t size_of_file;
     // supply name, author, size, content and permissions to the API Call
     std::string content = __getFileContent(path, size_of_file);
-
+    
+    // get the filename from the chunk
     auto splitted_path = split(path, "/");
-    // make an API call
-    client->call("upload", splitted_path.back(), user_id, permissions, size_of_file, content);
+
+    // make an RPC Call to upload the chunk
+    client->call("upload", file_id, splitted_path.back(), content);
 }
 
 void FSS_Client::Client::__download_file(std::string file_id)
@@ -209,7 +211,7 @@ FSS_Client::Client::Client(rpc::client &client)
 {
     this->client = &client;
     this->client->call("ping").as<bool>();
-    this->client->set_timeout(300);
+    this->client->set_timeout(300000);
 }
 
 FSS_Client::Client::~Client()
@@ -223,15 +225,15 @@ void FSS_Client::Client::upload()
     // upload function to be called directly from frontend
     // these functions are directly called form UI so no arguments
     std::string path, permissions = "*";
-    bool access;
+    char access = 'y';
     // add appropriate data input like, file path and permissions
     std::cout << "**Uploading**\nUser Options::" << std::endl;
     std::cout << "\tPath to the file: \t";
     std::cin >> path;
-    std::cout << "\tDo you want to grant access of this file to other users (0/1): ";
+    std::cout << "\tDo you want to grant access of this file to other users ([y]/n): ";
 
     std::cin >> access;
-    if (access)
+    if (access == 'y')
     {
         std::cout << "\t>>> Enter space seperated user names: ";
         std::cin >> permissions;
@@ -256,8 +258,7 @@ void FSS_Client::Client::upload()
     std::cout << ">> Splitting files into chunks..." << std::endl;
 
     // 4. split the file into chunks of 1 MB each
-    std::cout << (("split -b 100 --numeric-suffixes "+new_path+"/"+file_name +" " + file_name+"-").c_str()) << std::endl;
-    system(("cd " +new_path + " && split -b 100 --numeric-suffixes "+file_name +" " + file_name+"-").c_str());
+    system(("cd " +new_path + " && split -b 100 --numeric-suffixes " + file_name).c_str());
 
     // 5. remove the parent file
     system(("rm "+new_path+"/"+file_name).c_str());
@@ -265,20 +266,23 @@ void FSS_Client::Client::upload()
     // 6. get the list of files inside the directory
     std::cout << ">> Getting Ready for uploading all chunks..." << std::endl;
 
+    std::string file_id = this->client->call("start-upload", file_name, this->user_id).as<std::string>();
+
     DIR *d;
     struct dirent *dir;
     d = opendir(new_path.c_str());
     if (d) {
         while ((dir = readdir(d)) != NULL) {
+            if(dir->d_name[0] == '.') continue;
             std::cout << ">> Uploading chunk: " << dir->d_name;
-            __upload_file(permissions, new_path+"/"+dir->d_name);
+            __upload_file(file_id, new_path+"/"+dir->d_name);
             std::cout << "\t Uploaded " << std::endl;
         }
         closedir(d);
     }
     
     // when the upload is complete, remove all the chunks and also the directory
-    auto isUploadComplete = this->client->call("finishUpload", file_name).as<bool>();
+    auto isUploadComplete = this->client->call("finish-upload", file_id, file_name, user_id, permissions).as<bool>();
     if(isUploadComplete) {
         system(("rm -rf "+new_path).c_str());
     }
@@ -379,7 +383,8 @@ void FSS_Client::Client::init()
                 std::cout << "**Thanks for using our system**" << std::endl;
                 exit(0);
             default:
-                std::cout << "Please enter valid choice!" << std::endl;
+                std::cout << "Please enter valid choice!" << std::endl; 
+                break;
             }
         }
         else
@@ -408,6 +413,7 @@ void FSS_Client::Client::init()
                 break;
             default:
                 std::cout << "Please enter valid choice!" << std::endl;
+                break;
             }
         }
         std::cout << std::endl;
