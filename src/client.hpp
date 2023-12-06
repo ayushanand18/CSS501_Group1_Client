@@ -86,6 +86,9 @@ namespace FSS_Client {
         // contributed by @uday
         void __download_file(std::string file_id);
 
+        // function to handle resumption of uploads
+        void __resumeUpload(std::string file_id, std::string file_name, std::string permissions, std::pair<bool, std::vector<std::string>>& uploaded_chunks);
+
         // function to show files to the user with the list of files on the server
         // contributed by @rudra
         void __view_files();
@@ -211,7 +214,8 @@ FSS_Client::Client::Client(rpc::client &client)
 {
     this->client = &client;
     this->client->call("ping").as<bool>();
-    this->client->set_timeout(300000);
+    // timeout is set to 60 sec
+    this->client->set_timeout(60*1000);
 }
 
 FSS_Client::Client::~Client()
@@ -220,23 +224,55 @@ FSS_Client::Client::~Client()
     this->is_signedin = false;
 }
 
+void FSS_Client::Client::__resumeUpload(std::string file_id, std::string file_name, std::string permissions, std::pair<bool, std::vector<std::string>>& uploaded_chunks) {
+    // resume the upload from the point it was paused
+    std::string new_path = "pending_uploads/"+file_name;
+    std::cout << ">> Retrying Uploads..." << std::endl;
+
+    DIR *d;
+    struct dirent *dir;
+    d = opendir(new_path.c_str());
+
+    if (d) {
+        while ((dir = readdir(d)) != NULL) {
+            if(dir->d_name[0] == '.') continue;
+            // do not upload if the chunk is already uploaded
+            if(std::find(uploaded_chunks.second.begin(), uploaded_chunks.second.end(), dir->d_name) != uploaded_chunks.second.end()) continue;
+
+            std::cout << ">> Uploading chunk: " << dir->d_name;
+            __upload_file(file_id, new_path+"/"+dir->d_name);
+            std::cout << "\t Uploaded " << std::endl;
+        }
+        closedir(d);
+    }
+
+    // when the upload is complete, remove all the chunks and also the directory
+    auto isUploadComplete = this->client->call("finish-upload", file_id, file_name, user_id, permissions).as<bool>();
+    if(isUploadComplete) {
+        system(("rm -rf "+new_path).c_str());
+    }
+
+    std::cout << "\t  Uploaded Complete! " << std::endl;
+}
+
 void FSS_Client::Client::upload()
 {
     // upload function to be called directly from frontend
     // these functions are directly called form UI so no arguments
-    std::string path, permissions = "*";
+    std::string path = "", permissions = "*";
     char access = 'y';
     // add appropriate data input like, file path and permissions
     std::cout << "**Uploading**\nUser Options::" << std::endl;
     std::cout << "\tPath to the file: \t";
-    std::cin >> path;
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    std::getline(std::cin, path);
     std::cout << "\tDo you want to grant access of this file to other users ([y]/n): ";
 
     std::cin >> access;
     if (access == 'y')
     {
         std::cout << "\t>>> Enter space seperated user names: ";
-        std::cin >> permissions;
+        std::getline(std::cin, permissions);
     }
 
     // split the file into many chunks
@@ -250,6 +286,8 @@ void FSS_Client::Client::upload()
     std::string file_name = splitted_path.back();
     std::string new_path = folder_path + "/" + file_name;
 
+    std::string file_id = this->client->call("start-upload", file_name, this->user_id).as<std::string>();
+    
     system(("mkdir " + new_path).c_str());
 
     // 3. now copy the file
@@ -258,7 +296,7 @@ void FSS_Client::Client::upload()
     std::cout << ">> Splitting files into chunks..." << std::endl;
 
     // 4. split the file into chunks of 1 MB each
-    system(("cd " +new_path + " && split -b 100 --numeric-suffixes " + file_name).c_str());
+    system(("cd " +new_path + " && split -b 1m --numeric-suffixes " + file_name).c_str());
 
     // 5. remove the parent file
     system(("rm "+new_path+"/"+file_name).c_str());
@@ -266,9 +304,18 @@ void FSS_Client::Client::upload()
     // 6. get the list of files inside the directory
     std::cout << ">> Getting Ready for uploading all chunks..." << std::endl;
 
-    std::string file_id = this->client->call("start-upload", file_name, this->user_id).as<std::string>();
+    DIR* d;
+    d = opendir(new_path.c_str());
+    if (d) {
+        std::cout << "Found previously paused uploads. " << std::endl;
+        auto uploaded_chunks = this->client->call("check-upload", file_id).as<std::pair<bool, std::vector<std::string>>>();
+        if(uploaded_chunks.first) {
+            __resumeUpload(file_id, file_name, permissions, uploaded_chunks);
+            return;
+        } 
+        std::cout << "No records found on server, starting fresh uploads." << std::endl;
+    }
 
-    DIR *d;
     struct dirent *dir;
     d = opendir(new_path.c_str());
     if (d) {
@@ -349,7 +396,7 @@ void FSS_Client::Client::signup()
     if (result)
         std::cout << "Successful registration." << std::endl;
     else
-        std::cout << "Unknown failure occured." << std::endl;
+        std::cout << "Invalid USerID/Password." << std::endl;
     if (result)
         user_id = username;
     is_signedin = result;
