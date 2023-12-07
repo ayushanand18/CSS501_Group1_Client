@@ -296,7 +296,7 @@ void FSS_Client::Client::upload()
     std::cout << ">> Splitting files into chunks..." << std::endl;
 
     // 4. split the file into chunks of 1 MB each
-    system(("cd " +new_path + " && split -b 1m --numeric-suffixes " + file_name).c_str());
+    system(("cd " +new_path + " && split -b 400 --numeric-suffixes " + file_name).c_str());
 
     // 5. remove the parent file
     system(("rm "+new_path+"/"+file_name).c_str());
